@@ -4,7 +4,7 @@ LifeLink is an offline React Native app for managing blood donors and donation r
 
 ## Current milestone
 
-This first milestone is the runnable project outline: Expo setup, navigation, seven screen placeholders, and reusable UI components. SQLite and donor/donation workflows are planned for the next development steps.
+The project outline now includes local SQLite setup for donors and donations, plus fictional starter records. The screens remain placeholders; donor registration, editing, search, and donation entry are planned for later milestones.
 
 ## Run the app
 
@@ -29,7 +29,7 @@ To run in a web browser, install the web dependencies and start the web target:
    npx expo start --web
    ```
 
-Open the project with Expo Go or an Android emulator. The first launch requires the JavaScript dependencies to be installed; app data features are being added in later milestones.
+Open the project with Expo Go or an Android emulator. On startup, the app creates its SQLite tables and inserts fictional sample records when the tables are empty. SQLite is configured for native Expo targets; web database support needs additional Metro and hosting configuration.
 
 ## Project structure
 
@@ -37,7 +37,7 @@ Open the project with Expo Go or an Android emulator. The first launch requires 
 assets/                 App images and icons
 src/
   components/           Reusable donor, search, filter, and placeholder UI
-  database/              SQLite setup and table queries (next milestone)
+  database/              SQLite initialization, tables, and read queries
   navigation/            React Navigation stack
   screens/               Dashboard and six app screens
   utils/                 Shared validation helpers
@@ -47,7 +47,7 @@ App.js                   Expo app entry point
 ## Planned development milestones
 
 1. Runnable scaffold and navigation.
-2. SQLite tables and fictional sample records.
+2. SQLite tables and fictional sample records. (Implemented.)
 3. Donor registration, details, editing, deletion, and validation.
 4. Donor search/filters and donation history entry.
 5. Database-backed dashboard, settings, and offline workflow checks.
