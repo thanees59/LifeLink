@@ -23,7 +23,7 @@ export default function AppNavigation() {
       <Stack.Navigator initialRouteName="Dashboard" screenOptions={screenOptions}>
         <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'LifeLink' }} />
         <Stack.Screen name="DonorRegistry" component={DonorListScreen} options={{ title: 'Donor Registry' }} />
-        <Stack.Screen name="AddDonor" component={AddDonorScreen} options={{ title: 'Add Donor' }} />
+        <Stack.Screen name="AddDonor" component={AddDonorScreen} options={({ route }) => ({ title: route.params?.donorId ? 'Edit Donor' : 'Add Donor' })} />
         <Stack.Screen name="DonorDetails" component={DonorDetailsScreen} options={{ title: 'Donor Details' }} />
         <Stack.Screen name="DonationHistory" component={DonationHistoryScreen} options={{ title: 'Donation History' }} />
         <Stack.Screen name="AddDonation" component={AddDonationScreen} options={{ title: 'Add Donation' }} />

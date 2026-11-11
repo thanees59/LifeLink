@@ -5,7 +5,7 @@ export default function DonorCard({ donor }) {
     <View style={styles.card}>
       <View style={styles.avatar}><Text style={styles.blood}>{donor?.bloodGroup ?? '—'}</Text></View>
       <View style={styles.details}>
-        <Text style={styles.name}>{donor?.fullName ?? 'Donor name'}</Text>
+        <Text style={styles.name}>{donor?.name ?? donor?.fullName ?? 'Donor name'}</Text>
         <Text style={styles.meta}>{donor?.district ?? 'District'} · {donor?.availability ?? 'Availability'}</Text>
       </View>
     </View>
