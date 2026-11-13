@@ -4,7 +4,7 @@ LifeLink is an offline React Native app for managing blood donors and donation r
 
 ## Current milestone
 
-The app now includes local SQLite setup, fictional starter records, donor registration with validation, a database-backed donor registry, donor details, editing, and deletion. Search and filters, donation entry, and database-backed dashboard features are planned for later milestones.
+The app now includes local SQLite setup, fictional starter records, donor registration with validation, a database-backed donor registry, donor details, editing, deletion, donor search and blood group filtering, and donation entry/history.
 
 ## Run the app
 
@@ -49,7 +49,7 @@ App.js                   Expo app entry point
 1. Runnable scaffold and navigation.
 2. SQLite tables and fictional sample records. (Implemented.)
 3. Donor registration, details, editing, deletion, and validation. (Implemented.)
-4. Donor search/filters and donation history entry.
-5. Database-backed dashboard, settings, and offline workflow checks.
+4. Donor search/filters and donation history entry. (Implemented.)
+5. Database-backed dashboard, settings, and offline workflow checks. (Implemented.)
 
 All demonstration donor information should be fictional. Availability is an administrative status; medical donation eligibility must be assessed by qualified healthcare professionals.

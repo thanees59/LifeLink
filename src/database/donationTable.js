@@ -18,6 +18,14 @@ export async function getDonationsForDonor(donorId) {
   );
 }
 
+export async function createDonation(donation) {
+  const db = await getDatabase();
+  return db.runAsync(
+    'INSERT INTO donations (donor_id, donation_date, location, notes) VALUES (?, ?, ?, ?)',
+    donation.donor_id, donation.donation_date, donation.location.trim(), donation.notes?.trim() || null,
+  );
+}
+
 export async function getDonationCount() {
   const db = await getDatabase();
   const row = await db.getFirstAsync('SELECT COUNT(*) AS count FROM donations');
