@@ -41,7 +41,7 @@ src/
   navigation/            React Navigation stack
   screens/               Dashboard and six app screens
   utils/                 Shared validation helpers
-App.js                   Expo app entry point
+App.jsx                  Expo app entry point
 ```
 
 ## Planned development milestones

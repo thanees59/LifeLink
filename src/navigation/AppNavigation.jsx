@@ -1,12 +1,12 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DashboardScreen from '../screens/DashboardScreen';
-import DonorListScreen from '../screens/DonorListScreen';
-import AddDonorScreen from '../screens/AddDonorScreen';
-import DonorDetailsScreen from '../screens/DonorDetailsScreen';
-import DonationHistoryScreen from '../screens/DonationHistoryScreen';
-import AddDonationScreen from '../screens/AddDonationScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import DashboardScreen from '../screens/DashboardScreen.jsx';
+import DonorListScreen from '../screens/DonorListScreen.jsx';
+import AddDonorScreen from '../screens/AddDonorScreen.jsx';
+import DonorDetailsScreen from '../screens/DonorDetailsScreen.jsx';
+import DonationHistoryScreen from '../screens/DonationHistoryScreen.jsx';
+import AddDonationScreen from '../screens/AddDonationScreen.jsx';
+import SettingsScreen from '../screens/SettingsScreen.jsx';
 
 const Stack = createNativeStackNavigator();
 
