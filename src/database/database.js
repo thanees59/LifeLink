@@ -22,6 +22,8 @@ async function initializeDatabase() {
       blood_group TEXT NOT NULL CHECK (blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
       district TEXT NOT NULL,
       availability TEXT NOT NULL DEFAULT 'Available' CHECK (availability IN ('Available', 'Unavailable')),
+      contact_consent INTEGER NOT NULL DEFAULT 0 CHECK (contact_consent IN (0, 1)),
+      contact_consent_updated_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS donations (
@@ -36,7 +38,21 @@ async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_donors_blood_group ON donors(blood_group);
     CREATE INDEX IF NOT EXISTS idx_donors_district ON donors(district);
     CREATE INDEX IF NOT EXISTS idx_donations_donor_date ON donations(donor_id, donation_date DESC);
+    CREATE TABLE IF NOT EXISTS app_admin_auth (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
+
+  const donorColumns = await db.getAllAsync('PRAGMA table_info(donors)');
+  if (!donorColumns.some((column) => column.name === 'contact_consent')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN contact_consent INTEGER NOT NULL DEFAULT 0 CHECK (contact_consent IN (0, 1))');
+  }
+  if (!donorColumns.some((column) => column.name === 'contact_consent_updated_at')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN contact_consent_updated_at TEXT');
+  }
 
   const existing = await db.getFirstAsync('SELECT COUNT(*) AS count FROM donors');
   if (existing.count === 0) {
@@ -60,6 +76,11 @@ async function initializeDatabase() {
 
 /** Returns the initialized local database. Safe to call from multiple screens. */
 export function getDatabase() {
-  if (!databasePromise) databasePromise = initializeDatabase();
+  if (!databasePromise) {
+    databasePromise = initializeDatabase().catch((error) => {
+      databasePromise = null;
+      throw error;
+    });
+  }
   return databasePromise;
 }

@@ -4,8 +4,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getDonors } from '../database/donorTable';
 import SearchBar from '../components/SearchBar.jsx';
 import BloodGroupFilter from '../components/BloodGroupFilter.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function DonorListScreen({ navigation }) {
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -16,7 +19,7 @@ export default function DonorListScreen({ navigation }) {
     const search = query.trim().toLocaleLowerCase();
     return (bloodGroup === 'All' || donor.blood_group === bloodGroup)
       && (!search || [donor.name, donor.district, donor.phone, donor.blood_group]
-        .some((value) => value.toLocaleLowerCase().includes(search)));
+        .some((value) => String(value ?? '').toLocaleLowerCase().includes(search)));
   });
 
   useFocusEffect(useCallback(() => {
@@ -34,7 +37,7 @@ export default function DonorListScreen({ navigation }) {
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.header}>
         <View><Text style={styles.title}>Donor Registry</Text><Text style={styles.subtitle}>{donors.length} {donors.length === 1 ? 'donor' : 'donors'} saved on this device</Text></View>
-        <Pressable style={styles.addButton} onPress={() => navigation.navigate('AddDonor')}><Text style={styles.addText}>+ Add</Text></Pressable>
+        {isAdmin ? <Pressable style={styles.addButton} onPress={() => navigation.navigate('AddDonor')}><Text style={styles.addText}>+ Add</Text></Pressable> : null}
       </View>
       <SearchBar value={query} onChangeText={setQuery} placeholder="Search name, district, or phone" />
       <BloodGroupFilter selected={bloodGroup} onSelect={setBloodGroup} />
@@ -47,7 +50,7 @@ export default function DonorListScreen({ navigation }) {
       ) : filteredDonors.map((donor) => (
         <Pressable key={donor.id} onPress={() => navigation.navigate('DonorDetails', { donorId: donor.id })} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
           <View style={styles.bloodBadge}><Text style={styles.blood}>{donor.blood_group}</Text></View>
-          <View style={styles.copy}><Text style={styles.name}>{donor.name}</Text><Text style={styles.meta}>{donor.district} · {donor.phone}</Text></View>
+          <View style={styles.copy}><Text style={styles.name}>{donor.name}</Text><Text style={styles.meta}>{donor.district} - {donor.phone ?? 'Contact withheld'}</Text></View>
           <Text style={styles.chevron}>›</Text>
         </Pressable>
       ))}

@@ -13,12 +13,13 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
     blood_group: initialValues?.blood_group ?? '',
     district: initialValues?.district ?? '',
     availability: initialValues?.availability ?? 'Available',
+    contact_consent: Boolean(initialValues?.contact_consent),
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
   function setField(field, value) {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => ({ ...current, [field]: value, ...(field === 'contact_consent' && !value ? { phone: '' } : {}) }));
     setErrors((current) => ({ ...current, [field]: undefined, form: undefined }));
   }
 
@@ -46,7 +47,10 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <Text style={styles.intro}>Enter the donor details to save them on this device.</Text>
       <Field label="Full name" value={values.name} onChangeText={(value) => setField('name', value)} error={errors.name} placeholder="e.g. Amaya Perera" />
-      <Field label="Phone number" value={values.phone} onChangeText={(value) => setField('phone', value)} error={errors.phone} placeholder="e.g. 0771234567" keyboardType="phone-pad" />
+      <Text style={styles.label}>Contact sharing consent</Text>
+      <Option label={values.contact_consent ? 'Consent recorded' : 'Consent not recorded'} selected={values.contact_consent} onPress={() => setField('contact_consent', !values.contact_consent)} />
+      <Text style={styles.hint}>Only record and share a donor’s phone number with LifeLink coordinators after the donor gives permission.</Text>
+      {values.contact_consent ? <Field label="Phone number" value={values.phone} onChangeText={(value) => setField('phone', value)} error={errors.phone} placeholder="e.g. 0771234567" keyboardType="phone-pad" /> : <Text style={styles.withheld}>Contact details are withheld until the donor’s consent is recorded.</Text>}
 
       <Text style={styles.label}>Blood group</Text>
       <View style={styles.optionWrap}>
@@ -105,6 +109,7 @@ const styles = StyleSheet.create({
   optionText: { color: '#52665D', fontSize: 13, fontWeight: '600' },
   selectedOptionText: { color: '#FFFFFF' },
   hint: { color: MUTED, fontSize: 12, lineHeight: 17, marginTop: -1, marginBottom: 18 },
+  withheld: { color: MUTED, fontSize: 12, lineHeight: 17, marginTop: 2, marginBottom: 18 },
   error: { color: '#B33E42', fontSize: 12, marginTop: 5 },
   submit: { backgroundColor: GREEN, borderRadius: 14, alignItems: 'center', paddingVertical: 15, marginTop: 8 },
   submitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
