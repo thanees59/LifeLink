@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import DonorForm from '../components/DonorForm';
+import DonorForm from '../components/DonorForm.jsx';
 import { createDonor, getDonorById, updateDonor } from '../database/donorTable';
 
 export default function AddDonorScreen({ navigation, route }) {

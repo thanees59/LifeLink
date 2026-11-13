@@ -2,8 +2,8 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDonors } from '../database/donorTable';
-import SearchBar from '../components/SearchBar';
-import BloodGroupFilter from '../components/BloodGroupFilter';
+import SearchBar from '../components/SearchBar.jsx';
+import BloodGroupFilter from '../components/BloodGroupFilter.jsx';
 
 export default function DonorListScreen({ navigation }) {
   const [donors, setDonors] = useState([]);

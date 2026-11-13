@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { StatusBar } from 'react-native';
-import AppNavigation from './src/navigation/AppNavigation';
+import AppNavigation from './src/navigation/AppNavigation.jsx';
 import { getDatabase } from './src/database/database';
 
 export default function App() {
