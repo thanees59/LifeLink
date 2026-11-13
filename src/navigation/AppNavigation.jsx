@@ -7,6 +7,7 @@ import DonorDetailsScreen from '../screens/DonorDetailsScreen.jsx';
 import DonationHistoryScreen from '../screens/DonationHistoryScreen.jsx';
 import AddDonationScreen from '../screens/AddDonationScreen.jsx';
 import SettingsScreen from '../screens/SettingsScreen.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,15 +19,16 @@ const screenOptions = {
 };
 
 export default function AppNavigation() {
+  const { role } = useAuth();
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Dashboard" screenOptions={screenOptions}>
         <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'LifeLink' }} />
         <Stack.Screen name="DonorRegistry" component={DonorListScreen} options={{ title: 'Donor Registry' }} />
-        <Stack.Screen name="AddDonor" component={AddDonorScreen} options={({ route }) => ({ title: route.params?.donorId ? 'Edit Donor' : 'Add Donor' })} />
+        {role === 'admin' ? <Stack.Screen name="AddDonor" component={AddDonorScreen} options={({ route }) => ({ title: route.params?.donorId ? 'Edit Donor' : 'Add Donor' })} /> : null}
         <Stack.Screen name="DonorDetails" component={DonorDetailsScreen} options={{ title: 'Donor Details' }} />
         <Stack.Screen name="DonationHistory" component={DonationHistoryScreen} options={{ title: 'Donation History' }} />
-        <Stack.Screen name="AddDonation" component={AddDonationScreen} options={{ title: 'Add Donation' }} />
+        {role === 'admin' ? <Stack.Screen name="AddDonation" component={AddDonationScreen} options={({ route }) => ({ title: route.params?.donationId ? 'Edit Donation' : 'Add Donation' })} /> : null}
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings & About' }} />
       </Stack.Navigator>
     </NavigationContainer>

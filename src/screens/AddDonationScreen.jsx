@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDonors } from '../database/donorTable';
-import { createDonation } from '../database/donationTable';
+import { createDonation, getDonationById, updateDonation } from '../database/donationTable';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function AddDonationScreen({ navigation, route }) {
+  const donationId = route.params?.donationId;
   const [donors, setDonors] = useState([]);
   const [donorId, setDonorId] = useState(route.params?.donorId ?? null);
   const [date, setDate] = useState(today());
@@ -17,11 +18,20 @@ export default function AddDonationScreen({ navigation, route }) {
 
   useFocusEffect(useCallback(() => {
     let active = true;
-    getDonors().then((rows) => { if (active) setDonors(rows); })
+    Promise.all([getDonors(), donationId ? getDonationById(donationId) : Promise.resolve(null)]).then(([rows, donation]) => {
+      if (!active) return;
+      setDonors(rows);
+      if (donation) {
+        setDonorId(donation.donor_id);
+        setDate(donation.donation_date);
+        setLocation(donation.location);
+        setNotes(donation.notes ?? '');
+      }
+    })
       .catch(() => Alert.alert('Unable to load donors', 'Please return and try again.'))
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []));
+  }, [donationId]));
 
   async function saveDonation() {
     if (!donorId) return Alert.alert('Choose a donor', 'Select the donor for this donation.');
@@ -32,8 +42,10 @@ export default function AddDonationScreen({ navigation, route }) {
     if (!location.trim()) return Alert.alert('Add a location', 'Enter where the donation took place.');
     setSaving(true);
     try {
-      await createDonation({ donor_id: donorId, donation_date: date, location, notes });
-      navigation.replace('DonationHistory');
+      const values = { donor_id: donorId, donation_date: date, location, notes };
+      if (donationId) await updateDonation(donationId, values);
+      else await createDonation(values);
+      navigation.replace('DonationHistory', route.params?.donorId == null ? undefined : { donorId: route.params.donorId });
     } catch {
       Alert.alert('Unable to save donation', 'Please try again.');
     } finally { setSaving(false); }
@@ -41,7 +53,7 @@ export default function AddDonationScreen({ navigation, route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Record a donation</Text>
+      <Text style={styles.title}>{donationId ? 'Edit donation' : 'Record a donation'}</Text>
       <Text style={styles.help}>Donation history is stored locally on this device.</Text>
       <Text style={styles.label}>Donor</Text>
       {loading ? <ActivityIndicator color="#24775D" /> : donors.length === 0 ? <Text style={styles.empty}>Add a donor before recording a donation.</Text> : (
@@ -57,7 +69,7 @@ export default function AddDonationScreen({ navigation, route }) {
       <Field label="Location" value={location} onChangeText={setLocation} placeholder="Hospital or donation centre" />
       <Field label="Notes (optional)" value={notes} onChangeText={setNotes} placeholder="Add any helpful details" multiline />
       <Pressable disabled={saving || loading || donors.length === 0} style={[styles.button, (saving || loading || donors.length === 0) && styles.disabled]} onPress={saveDonation}>
-        <Text style={styles.buttonText}>{saving ? 'Saving…' : 'Save donation'}</Text>
+        <Text style={styles.buttonText}>{saving ? 'Saving…' : donationId ? 'Update donation' : 'Save donation'}</Text>
       </Pressable>
     </ScrollView>
   );

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useFocusEffect } from '@react-navigation/native';
 import { getDonors } from '../database/donorTable';
 import { getDonations } from '../database/donationTable';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const actions = [
   { title: 'Donor Registry', detail: 'Browse and find donors', screen: 'DonorRegistry', icon: '◎' },
@@ -13,6 +14,7 @@ const actions = [
 ];
 
 export default function DashboardScreen({ navigation }) {
+  const { role } = useAuth();
   const [stats, setStats] = useState({ donors: 0, available: 0, donations: 0, latest: null });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -33,6 +35,7 @@ export default function DashboardScreen({ navigation }) {
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.hero}>
         <Text style={styles.eyebrow}>OFFLINE BLOOD DONOR REGISTRY</Text>
+        <Text style={styles.roleLabel}>{role === 'admin' ? 'Administrator access' : 'General user access'}</Text>
         <Text style={styles.heading}>Every donor{"\n"}can make a difference.</Text>
         <Text style={styles.body}>A simple, private place to manage donor details and donation history on this device.</Text>
         <View style={styles.statusPill}><View style={styles.dot} /><Text style={styles.statusText}>Designed to work offline</Text></View>
@@ -58,7 +61,7 @@ export default function DashboardScreen({ navigation }) {
       ) : null}
 
       <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Your workspace</Text><Text style={styles.sectionHint}>Choose where to start</Text></View>
-      {actions.map((action) => (
+      {actions.filter((action) => role === 'admin' || !['AddDonor', 'AddDonation'].includes(action.screen)).map((action) => (
         <Pressable key={action.screen} style={({ pressed }) => [styles.action, pressed && styles.pressed]} onPress={() => navigation.navigate(action.screen)}>
           <View style={styles.actionIcon}><Text style={styles.actionIconText}>{action.icon}</Text></View>
           <View style={styles.actionCopy}><Text style={styles.actionTitle}>{action.title}</Text><Text style={styles.actionDetail}>{action.detail}</Text></View>
@@ -77,6 +80,7 @@ function Stat({ label, value }) {
 const styles = StyleSheet.create({
   page: { padding: 20, paddingBottom: 36 }, hero: { backgroundColor: '#173B32', borderRadius: 24, padding: 23, marginBottom: 24 },
   eyebrow: { color: '#B8DFCB', fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: 14 }, heading: { color: '#FFFFFF', fontSize: 29, fontWeight: '800', lineHeight: 35, marginBottom: 10 },
+  roleLabel: { alignSelf: 'flex-start', color: '#FFFFFF', backgroundColor: '#285447', overflow: 'hidden', borderRadius: 11, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: '700', marginBottom: 12 },
   body: { color: '#D3E2DB', fontSize: 14, lineHeight: 21 }, statusPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', backgroundColor: '#285447', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, marginTop: 18 },
   dot: { backgroundColor: '#82D2A6', width: 7, height: 7, borderRadius: 4, marginRight: 8 }, statusText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
   sectionHeader: { marginBottom: 12 }, sectionTitle: { color: '#173B32', fontSize: 19, fontWeight: '800' }, sectionHint: { color: '#65766F', fontSize: 13, marginTop: 3 },
