@@ -2,11 +2,22 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDonors } from '../database/donorTable';
+import SearchBar from '../components/SearchBar';
+import BloodGroupFilter from '../components/BloodGroupFilter';
 
 export default function DonorListScreen({ navigation }) {
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [query, setQuery] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('All');
+
+  const filteredDonors = donors.filter((donor) => {
+    const search = query.trim().toLocaleLowerCase();
+    return (bloodGroup === 'All' || donor.blood_group === bloodGroup)
+      && (!search || [donor.name, donor.district, donor.phone, donor.blood_group]
+        .some((value) => value.toLocaleLowerCase().includes(search)));
+  });
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -25,11 +36,15 @@ export default function DonorListScreen({ navigation }) {
         <View><Text style={styles.title}>Donor Registry</Text><Text style={styles.subtitle}>{donors.length} {donors.length === 1 ? 'donor' : 'donors'} saved on this device</Text></View>
         <Pressable style={styles.addButton} onPress={() => navigation.navigate('AddDonor')}><Text style={styles.addText}>+ Add</Text></Pressable>
       </View>
+      <SearchBar value={query} onChangeText={setQuery} placeholder="Search name, district, or phone" />
+      <BloodGroupFilter selected={bloodGroup} onSelect={setBloodGroup} />
       {loading ? <ActivityIndicator color="#24775D" style={styles.state} /> : loadError ? (
         <Text style={styles.empty}>Could not load donors. Return to this screen to try again.</Text>
       ) : donors.length === 0 ? (
         <View style={styles.emptyCard}><Text style={styles.emptyTitle}>No donors yet</Text><Text style={styles.empty}>Add a donor to start your local registry.</Text></View>
-      ) : donors.map((donor) => (
+      ) : filteredDonors.length === 0 ? (
+        <Text style={styles.empty}>No donors match your search and filters.</Text>
+      ) : filteredDonors.map((donor) => (
         <Pressable key={donor.id} onPress={() => navigation.navigate('DonorDetails', { donorId: donor.id })} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
           <View style={styles.bloodBadge}><Text style={styles.blood}>{donor.blood_group}</Text></View>
           <View style={styles.copy}><Text style={styles.name}>{donor.name}</Text><Text style={styles.meta}>{donor.district} · {donor.phone}</Text></View>
