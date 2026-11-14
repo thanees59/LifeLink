@@ -1,8 +1,10 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 const BLOOD_GROUPS = ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 export default function BloodGroupFilter({ selected = 'All', onSelect }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {BLOOD_GROUPS.map((group) => {
@@ -17,10 +19,10 @@ export default function BloodGroupFilter({ selected = 'All', onSelect }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   row: { gap: 8, paddingVertical: 4 },
   chip: { borderWidth: 1, borderColor: '#DCE6E0', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13, backgroundColor: '#FFFFFF' },
   activeChip: { borderColor: '#24775D', backgroundColor: '#24775D' },
   label: { color: '#52665D', fontSize: 13, fontWeight: '600' },
   activeLabel: { color: '#FFFFFF' },
-});
+};

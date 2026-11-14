@@ -1,3 +1,4 @@
+import { useTheme, useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,6 +8,8 @@ import { getDonations } from '../database/donationTable';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function SettingsScreen() {
+  const styles = useThemedStyles(baseStyles);
+  const { preference, mode, colors, setPreference } = useTheme();
   const { role, signOut } = useAuth();
   const [state, setState] = useState({ loading: true, error: false, donors: 0, donations: 0 });
   const [exporting, setExporting] = useState(false);
@@ -57,15 +60,28 @@ export default function SettingsScreen() {
       <Text style={styles.subtitle}>LifeLink keeps your registry on this device.</Text>
 
       <View style={styles.card}>
+        <Text style={styles.heading}>Appearance</Text>
+        <Text style={styles.body}>Choose Light, Dark, or follow your device setting.</Text>
+        <View style={styles.themeOptions}>
+          {['light', 'dark', 'system'].map((option) => (
+            <Pressable key={option} accessibilityRole="button" accessibilityState={{ selected: preference === option }} onPress={() => setPreference(option).catch(() => Alert.alert('Unable to save theme', 'Please try again.'))} style={[styles.themeOption, preference === option && styles.themeOptionSelected]}>
+              <Text style={[styles.themeOptionText, preference === option && styles.themeOptionTextSelected]}>{option === 'system' ? 'System' : option === 'light' ? 'Light' : 'Dark'}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={styles.themeHint}>Currently using {mode === 'dark' ? 'dark' : 'light'} appearance.</Text>
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.heading}>Current access</Text>
-        <Text style={styles.body}>Signed in as {role === 'admin' ? 'Administrator' : 'General user'} on this device. Roles and records do not sync between devices.</Text>
-        <Pressable accessibilityRole="button" onPress={signOut} style={styles.signOutButton}><Text style={styles.signOutText}>Sign out / switch role</Text></Pressable>
+        <Text style={styles.body}>Signed in as {role === 'admin' ? 'Administrator' : 'Donor'} on this device. Roles and records do not sync between devices.</Text>
+        <Pressable accessibilityRole="button" onPress={signOut} style={styles.signOutButton}><Text style={styles.signOutText}>Logout</Text></Pressable>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.heading}>Local database</Text>
         <View style={styles.statusRow}><View style={[styles.dot, !state.error && !state.loading ? styles.online : styles.problem]} /><Text style={styles.status}>{state.loading ? 'Checking local storage…' : state.error ? 'Local database unavailable' : 'Local database ready'}</Text></View>
-        {state.loading ? <ActivityIndicator color="#24775D" style={styles.loader} /> : state.error ? (
+        {state.loading ? <ActivityIndicator color={colors.green} style={styles.loader} /> : state.error ? (
           <><Text style={styles.body}>LifeLink could not read its local SQLite database.</Text><Pressable onPress={refresh} style={styles.retry}><Text style={styles.retryText}>Check again</Text></Pressable></>
         ) : (
           <View style={styles.counts}><Count label="Donors" value={state.donors} /><Count label="Donations" value={state.donations} /></View>
@@ -97,6 +113,7 @@ export default function SettingsScreen() {
 }
 
 function Count({ label, value }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.count}><Text style={styles.countValue}>{value}</Text><Text style={styles.countLabel}>{label}</Text></View>;
 }
 
@@ -106,7 +123,7 @@ function csvValue(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 }, title: { color: '#173B32', fontSize: 24, fontWeight: '800' },
   subtitle: { color: '#65766F', fontSize: 14, marginTop: 5, marginBottom: 18 }, card: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 18, marginBottom: 13 },
   heading: { color: '#173B32', fontSize: 16, fontWeight: '700', marginBottom: 12 }, statusRow: { flexDirection: 'row', alignItems: 'center' },
@@ -117,5 +134,7 @@ const styles = StyleSheet.create({
   retry: { alignSelf: 'flex-start', backgroundColor: '#24775D', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginTop: 14 }, retryText: { color: '#FFFFFF', fontWeight: '700' },
   exportButton: { alignItems: 'center', backgroundColor: '#24775D', borderRadius: 12, paddingVertical: 13, marginTop: 16 }, exportText: { color: '#FFFFFF', fontWeight: '700' }, disabled: { opacity: 0.55 },
   signOutButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: '#24775D', borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 14 }, signOutText: { color: '#24775D', fontWeight: '700' },
+  themeOptions: { flexDirection: 'row', gap: 8, marginTop: 14 }, themeOption: { flex: 1, alignItems: 'center', paddingVertical: 11, borderWidth: 1, borderColor: '#DCE6E0', borderRadius: 12, backgroundColor: '#FFFFFF' },
+  themeOptionSelected: { backgroundColor: '#24775D', borderColor: '#24775D' }, themeOptionText: { color: '#173B32', fontSize: 13, fontWeight: '700' }, themeOptionTextSelected: { color: '#FFFFFF' }, themeHint: { color: '#65766F', fontSize: 12, marginTop: 10 },
   disclaimer: { color: '#65766F', fontSize: 12, lineHeight: 18, marginTop: 12 },
-});
+};

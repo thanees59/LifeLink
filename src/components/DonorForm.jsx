@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BLOOD_GROUPS, validateDonor } from '../utils/validation';
@@ -7,6 +8,7 @@ const GREEN = '#24775D';
 const MUTED = '#65766F';
 
 export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
+  const styles = useThemedStyles(baseStyles);
   const [values, setValues] = useState({
     name: initialValues?.name ?? '',
     phone: initialValues?.phone ?? '',
@@ -14,6 +16,9 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
     district: initialValues?.district ?? '',
     availability: initialValues?.availability ?? 'Available',
     contact_consent: Boolean(initialValues?.contact_consent),
+    account_username: initialValues?.account_username ?? '',
+    account_password: '',
+    account_password_confirmation: '',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -25,6 +30,12 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
 
   async function submit() {
     const validationErrors = validateDonor(values);
+    const loginName = values.account_username.trim();
+    if (values.account_password || loginName !== (initialValues?.account_username ?? '')) {
+      if (!loginName) validationErrors.account_username = 'Enter a username for this donor account.';
+      if (values.account_password.length < 8) validationErrors.account_password = 'Use a password with at least 8 characters.';
+      if (values.account_password !== values.account_password_confirmation) validationErrors.account_password_confirmation = 'The passwords do not match.';
+    }
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length) return;
 
@@ -34,7 +45,7 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
     } catch (error) {
       const message = String(error?.message ?? error);
       const formError = message.includes('UNIQUE constraint failed')
-        ? 'That phone number is already registered.'
+        ? message.includes('app_donor_auth.username') ? 'That donor username is already in use.' : 'That phone number is already registered.'
         : 'Could not save this donor. Please try again.';
       setErrors((current) => ({ ...current, form: formError }));
       Alert.alert('Unable to save donor', formError);
@@ -70,6 +81,12 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
       </View>
       <Text style={styles.hint}>This status is for record keeping and does not indicate medical eligibility.</Text>
 
+      <Text style={styles.accountHeading}>Donor sign-in (optional)</Text>
+      <Text style={styles.hint}>Create login details so this donor can access only their own profile and donation history.</Text>
+      <Field label="Username" value={values.account_username} onChangeText={(value) => setField('account_username', value)} error={errors.account_username} placeholder="Unique username" autoCapitalize="none" />
+      <Field label={initialValues?.account_username ? 'New password (leave blank to keep current)' : 'Password'} value={values.account_password} onChangeText={(value) => setField('account_password', value)} error={errors.account_password} placeholder="At least 8 characters" secureTextEntry autoCapitalize="none" />
+      {values.account_password ? <Field label="Confirm password" value={values.account_password_confirmation} onChangeText={(value) => setField('account_password_confirmation', value)} error={errors.account_password_confirmation} placeholder="Re-enter password" secureTextEntry autoCapitalize="none" /> : null}
+
       {errors.form && <Text style={styles.error}>{errors.form}</Text>}
       <Pressable disabled={saving} style={({ pressed }) => [styles.submit, pressed && styles.pressed, saving && styles.disabled]} onPress={submit}>
         <Text style={styles.submitText}>{saving ? 'Saving…' : submitLabel}</Text>
@@ -79,6 +96,7 @@ export default function DonorForm({ initialValues, onSubmit, submitLabel }) {
 }
 
 function Field({ label, error, ...inputProps }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -89,6 +107,7 @@ function Field({ label, error, ...inputProps }) {
 }
 
 function Option({ label, selected, onPress }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <Pressable onPress={onPress} style={[styles.option, selected && styles.selectedOption]}>
       <Text style={[styles.optionText, selected && styles.selectedOptionText]}>{label}</Text>
@@ -96,9 +115,10 @@ function Option({ label, selected, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 },
   intro: { color: MUTED, fontSize: 14, lineHeight: 21, marginBottom: 22 },
+  accountHeading: { color: INK, fontSize: 16, fontWeight: '800', marginTop: 10, marginBottom: 4 },
   field: { marginBottom: 17 },
   label: { color: INK, fontSize: 14, fontWeight: '700', marginBottom: 8 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE6E0', borderRadius: 13, paddingHorizontal: 14, paddingVertical: 13, color: INK, fontSize: 15 },
@@ -115,4 +135,4 @@ const styles = StyleSheet.create({
   submitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   pressed: { opacity: 0.8 },
   disabled: { opacity: 0.6 },
-});
+};

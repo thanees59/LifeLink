@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,6 +8,7 @@ import BloodGroupFilter from '../components/BloodGroupFilter.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function DonorListScreen({ navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
   const [donors, setDonors] = useState([]);
@@ -58,7 +60,7 @@ export default function DonorListScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   title: { color: '#173B32', fontSize: 23, fontWeight: '800' },
@@ -77,4 +79,4 @@ const styles = StyleSheet.create({
   emptyCard: { backgroundColor: '#FFFFFF', borderRadius: 17, padding: 20, alignItems: 'center' },
   emptyTitle: { color: '#173B32', fontSize: 16, fontWeight: '700', marginBottom: 5 },
   empty: { color: '#65766F', fontSize: 14, textAlign: 'center', lineHeight: 20, marginTop: 24 },
-});
+};

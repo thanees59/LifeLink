@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const INK = '#173B32';
@@ -5,6 +6,7 @@ const MUTED = '#65766F';
 const GREEN = '#24775D';
 
 export default function PlaceholderScreen({ title, description, nextSteps = [], navigation }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.introCard}>
@@ -38,7 +40,7 @@ export default function PlaceholderScreen({ title, description, nextSteps = [], 
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 },
   introCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22, marginBottom: 18 },
   iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#E6F3ED', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
@@ -54,4 +56,4 @@ const styles = StyleSheet.create({
   backButton: { backgroundColor: GREEN, borderRadius: 14, alignItems: 'center', paddingVertical: 15 },
   backButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   footer: { color: MUTED, fontSize: 12, textAlign: 'center', marginTop: 22 },
-});
+};

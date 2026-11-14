@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,10 +11,12 @@ const actions = [
   { title: 'Add a Donor', detail: 'Register a donor locally', screen: 'AddDonor', icon: '+' },
   { title: 'Donation History', detail: 'Review recorded donations', screen: 'DonationHistory', icon: '↗' },
   { title: 'Add Donation', detail: 'Record a donation event', screen: 'AddDonation', icon: '♥' },
+  { title: 'Pending Registrations', detail: 'Review older unlinked donor requests', screen: 'DonorSignupRequests', icon: '+' },
   { title: 'Settings & About', detail: 'App and local data details', screen: 'Settings', icon: '⚙' },
 ];
 
 export default function DashboardScreen({ navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { role } = useAuth();
   const [stats, setStats] = useState({ donors: 0, available: 0, donations: 0, latest: null });
   const [loading, setLoading] = useState(true);
@@ -74,10 +77,11 @@ export default function DashboardScreen({ navigation }) {
 }
 
 function Stat({ label, value }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.statCard}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 }, hero: { backgroundColor: '#173B32', borderRadius: 24, padding: 23, marginBottom: 24 },
   eyebrow: { color: '#B8DFCB', fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: 14 }, heading: { color: '#FFFFFF', fontSize: 29, fontWeight: '800', lineHeight: 35, marginBottom: 10 },
   roleLabel: { alignSelf: 'flex-start', color: '#FFFFFF', backgroundColor: '#285447', overflow: 'hidden', borderRadius: 11, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: '700', marginBottom: 12 },
@@ -92,4 +96,4 @@ const styles = StyleSheet.create({
   actionIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E6F3ED', marginRight: 13 }, actionIconText: { color: '#24775D', fontSize: 20, fontWeight: '700' },
   actionCopy: { flex: 1 }, actionTitle: { color: '#173B32', fontSize: 15, fontWeight: '700' }, actionDetail: { color: '#65766F', fontSize: 12, marginTop: 3 }, chevron: { color: '#8A9A93', fontSize: 25, marginLeft: 8 },
   note: { color: '#65766F', fontSize: 11, lineHeight: 16, marginTop: 16, textAlign: 'center' },
-});
+};
