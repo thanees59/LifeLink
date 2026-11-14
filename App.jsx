@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StatusBar, Text, View } from 'react-native';
 import AppNavigation from './src/navigation/AppNavigation.jsx';
 import { getDatabase } from './src/database/database';
-import { createAdminCredential, getAdminCredential, verifyAdminCredential } from './src/database/authTable';
+import { createAdminCredential, createDonorSignup, getAdminCredential, validateDonorSignupEligibility, verifyAdminCredential, verifyDonorCredential } from './src/database/authTable';
 import AuthScreen from './src/screens/AuthScreen.jsx';
+import DonorSignupScreen from './src/screens/DonorSignupScreen.jsx';
 import { AuthProvider } from './src/auth/AuthContext.jsx';
 import { clearActiveRole, setActiveRole } from './src/auth/session';
+import { ThemeProvider, useTheme, useThemedStyles } from './src/theme/ThemeContext.jsx';
 
 export default function App() {
-  const [auth, setAuth] = useState({ loading: true, error: false, configured: false, role: null });
+  return <ThemeProvider><AppContent /></ThemeProvider>;
+}
+
+function AppContent() {
+  const { mode } = useTheme();
+  const styles = useThemedStyles(appStyles);
+  const [auth, setAuth] = useState({ loading: true, error: false, configured: false, role: null, donorId: null });
   const [retryCount, setRetryCount] = useState(0);
+  const [showDonorSignup, setShowDonorSignup] = useState(false);
+  const [returnToDonorLogin, setReturnToDonorLogin] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -22,14 +32,16 @@ export default function App() {
     return () => { active = false; };
   }, [retryCount]);
 
-  function signIn(role) {
-    setActiveRole(role);
-    setAuth((current) => ({ ...current, role }));
+  function signIn(role, donorId = null) {
+    setActiveRole(role, donorId);
+    setShowDonorSignup(false);
+    setReturnToDonorLogin(false);
+    setAuth((current) => ({ ...current, role, donorId }));
   }
 
   function signOut() {
     clearActiveRole();
-    setAuth((current) => ({ ...current, role: null }));
+    setAuth((current) => ({ ...current, role: null, donorId: null }));
   }
 
   async function setupAdmin(password) {
@@ -44,14 +56,20 @@ export default function App() {
     return valid;
   }
 
+  async function signInDonor(username, password) {
+    const donorId = await verifyDonorCredential(username, password);
+    if (donorId != null) signIn('general', donorId);
+    return donorId != null;
+  }
+
   return (
-    <AuthProvider value={{ role: auth.role, signOut }}>
-      <StatusBar barStyle="dark-content" />
+    <AuthProvider value={{ role: auth.role, donorId: auth.donorId, signOut }}>
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       {auth.loading ? <View style={styles.state}><Text style={styles.stateText}>Loading LifeLink…</Text></View> : auth.error ? (
         <View style={styles.state}><Text style={styles.stateText}>LifeLink could not open its local database.</Text><Pressable onPress={() => { setAuth((current) => ({ ...current, loading: true, error: false })); setRetryCount((current) => current + 1); }}><Text style={styles.retry}>Try again</Text></Pressable></View>
-      ) : auth.role ? <AppNavigation /> : <AuthScreen configured={auth.configured} onSetupAdmin={setupAdmin} onAdminSignIn={signInAdmin} onContinueGeneral={() => signIn('general')} />}
+      ) : auth.role ? <AppNavigation /> : showDonorSignup ? <DonorSignupScreen onBack={() => { setShowDonorSignup(false); setReturnToDonorLogin(true); }} onSubmit={createDonorSignup} onValidateEligibility={validateDonorSignupEligibility} /> : <AuthScreen configured={auth.configured} onSetupAdmin={setupAdmin} onAdminSignIn={signInAdmin} onDonorSignIn={signInDonor} onOpenSignup={() => setShowDonorSignup(true)} initialScreen={returnToDonorLogin ? 'donor' : 'home'} />}
     </AuthProvider>
   );
 }
 
-const styles = StyleSheet.create({ state: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#F5F8F6' }, stateText: { color: '#173B32', fontSize: 15, textAlign: 'center' }, retry: { color: '#24775D', fontWeight: '700', marginTop: 14 } });
+const appStyles = { state: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#F5F8F6' }, stateText: { color: '#173B32', fontSize: 15, textAlign: 'center' }, retry: { color: '#24775D', fontWeight: '700', marginTop: 14 } };

@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,6 +8,7 @@ import { createDonation, getDonationById, updateDonation } from '../database/don
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function AddDonationScreen({ navigation, route }) {
+  const styles = useThemedStyles(baseStyles);
   const donationId = route.params?.donationId;
   const [donors, setDonors] = useState([]);
   const [donorId, setDonorId] = useState(route.params?.donorId ?? null);
@@ -76,10 +78,11 @@ export default function AddDonationScreen({ navigation, route }) {
 }
 
 function Field({ label, multiline, ...props }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.field}><Text style={styles.label}>{label}</Text><TextInput {...props} multiline={multiline} textAlignVertical={multiline ? 'top' : 'center'} style={[styles.input, multiline && styles.multiline]} placeholderTextColor="#8A9A93" /></View>;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 }, title: { color: '#173B32', fontSize: 24, fontWeight: '800' },
   help: { color: '#65766F', fontSize: 14, marginTop: 5, marginBottom: 22 }, label: { color: '#173B32', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   donorList: { gap: 8, marginBottom: 18 }, donor: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE6E0', borderRadius: 13, padding: 13 },
@@ -88,4 +91,4 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#FFFFFF', borderRadius: 13, paddingHorizontal: 14, paddingVertical: 13, color: '#173B32', fontSize: 15 },
   multiline: { minHeight: 90 }, button: { backgroundColor: '#24775D', borderRadius: 14, alignItems: 'center', paddingVertical: 15, marginTop: 4 },
   disabled: { opacity: 0.55 }, buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' }, empty: { color: '#65766F', marginBottom: 18 },
-});
+};

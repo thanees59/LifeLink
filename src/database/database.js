@@ -1,7 +1,8 @@
 import * as SQLite from 'expo-sqlite';
 
 const DATABASE_NAME = 'lifelink.db';
-let databasePromise;
+const DATABASE_PROMISE_KEY = '__lifelinkDatabasePromise__';
+const DATABASE_LOCK_KEY = '__lifelinkDatabaseLock__';
 
 const sampleDonors = [
   ['Amaya Perera', '0771234567', 'O+', 'Colombo', 'Available'],
@@ -24,6 +25,11 @@ async function initializeDatabase() {
       availability TEXT NOT NULL DEFAULT 'Available' CHECK (availability IN ('Available', 'Unavailable')),
       contact_consent INTEGER NOT NULL DEFAULT 0 CHECK (contact_consent IN (0, 1)),
       contact_consent_updated_at TEXT,
+      profile_image TEXT,
+      date_of_birth TEXT,
+      weight_kg REAL,
+      gender TEXT,
+      previous_donation_declared INTEGER NOT NULL DEFAULT 0 CHECK (previous_donation_declared IN (0, 1)),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS donations (
@@ -44,6 +50,30 @@ async function initializeDatabase() {
       password_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS app_donor_auth (
+      donor_id INTEGER PRIMARY KEY,
+      username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+      phone TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS app_donor_signups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL,
+      salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 
   const donorColumns = await db.getAllAsync('PRAGMA table_info(donors)');
@@ -52,6 +82,28 @@ async function initializeDatabase() {
   }
   if (!donorColumns.some((column) => column.name === 'contact_consent_updated_at')) {
     await db.execAsync('ALTER TABLE donors ADD COLUMN contact_consent_updated_at TEXT');
+  }
+  if (!donorColumns.some((column) => column.name === 'profile_image')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN profile_image TEXT');
+  }
+  if (!donorColumns.some((column) => column.name === 'date_of_birth')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN date_of_birth TEXT');
+  }
+  if (!donorColumns.some((column) => column.name === 'weight_kg')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN weight_kg REAL');
+  }
+  if (!donorColumns.some((column) => column.name === 'gender')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN gender TEXT');
+  }
+  if (!donorColumns.some((column) => column.name === 'previous_donation_declared')) {
+    await db.execAsync('ALTER TABLE donors ADD COLUMN previous_donation_declared INTEGER NOT NULL DEFAULT 0 CHECK (previous_donation_declared IN (0, 1))');
+  }
+  const donorAuthColumns = await db.getAllAsync('PRAGMA table_info(app_donor_auth)');
+  if (!donorAuthColumns.some((column) => column.name === 'phone')) {
+    await db.execAsync("ALTER TABLE app_donor_auth ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
+  }
+  if (!donorAuthColumns.some((column) => column.name === 'email')) {
+    await db.execAsync("ALTER TABLE app_donor_auth ADD COLUMN email TEXT NOT NULL DEFAULT ''");
   }
 
   const existing = await db.getFirstAsync('SELECT COUNT(*) AS count FROM donors');
@@ -76,11 +128,48 @@ async function initializeDatabase() {
 
 /** Returns the initialized local database. Safe to call from multiple screens. */
 export function getDatabase() {
-  if (!databasePromise) {
-    databasePromise = initializeDatabase().catch((error) => {
-      databasePromise = null;
+  if (!globalThis[DATABASE_PROMISE_KEY]) {
+    globalThis[DATABASE_PROMISE_KEY] = initializeDatabaseWithBrowserLock().catch((error) => {
+      delete globalThis[DATABASE_PROMISE_KEY];
       throw error;
     });
   }
-  return databasePromise;
+  return globalThis[DATABASE_PROMISE_KEY];
+}
+
+/**
+ * The web SQLite VFS uses exclusive OPFS access handles. Keep one Web Lock for
+ * the lifetime of this page so another LifeLink tab waits instead of opening
+ * the same persistent database concurrently. Native platforms skip this lock.
+ */
+async function initializeDatabaseWithBrowserLock() {
+  const locks = globalThis.navigator?.locks;
+  if (!locks?.request) return initializeDatabase();
+
+  let acquire;
+  let release;
+  let lockError;
+  const acquired = new Promise((resolve) => { acquire = resolve; });
+  const holdLock = new Promise((resolve) => { release = resolve; });
+  const lockRequest = locks.request('lifelink-sqlite-opfs', { mode: 'exclusive' }, async () => {
+    acquire();
+    await holdLock;
+  }).catch((error) => {
+    lockError = error;
+    acquire();
+  });
+  globalThis[DATABASE_LOCK_KEY] = { release, lockRequest };
+
+  await acquired;
+  if (lockError) {
+    delete globalThis[DATABASE_LOCK_KEY];
+    throw lockError;
+  }
+  try {
+    return await initializeDatabase();
+  } catch (error) {
+    release();
+    delete globalThis[DATABASE_LOCK_KEY];
+    throw error;
+  }
 }

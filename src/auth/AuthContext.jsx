@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-const AuthContext = createContext({ role: null, signOut: () => {} });
+const AuthContext = createContext({ role: null, donorId: null, signOut: () => {} });
 
 export function AuthProvider({ value, children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

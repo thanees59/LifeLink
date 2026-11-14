@@ -47,7 +47,7 @@ App.jsx                  Expo app entry point
 
 ## Local roles and contact privacy
 
-On first launch, create an administrator password for this device. Administrators can manage donor and donation records and export CSV data. General users can search and view registry and donation history, but cannot change or export records. Phone numbers are shown only to administrators and only when donor consent has been recorded; existing records default to no recorded consent after the database migration. Roles and accounts are local to this device and do not sync. The password is stored as a salted hash, but the SQLite database is not encrypted, so this is a basic access gate rather than protection from someone with technical access to the device.
+On first launch, create an administrator password for this device; there is no hard-coded default password. Administrators can manage donor and donation records, reset donor passwords, and export CSV data. Donor Registration creates a local donor profile and account together; donors can log in immediately and can view only their own profile and donation history. Forgot Password instructions direct donors to the administrator; the offline app does not send SMS messages. Donor account phone numbers and emails are kept with the local account and are not used as public donor contact details. Public phone numbers are shown only to administrators when donor contact consent is recorded. Roles and accounts are local to this device and do not sync. Passwords are stored as salted hashes, but the SQLite database is not encrypted, so this is a basic access gate rather than protection from someone with technical access to the device.
 
 ## Planned development milestones
 

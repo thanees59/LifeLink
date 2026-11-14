@@ -1,3 +1,4 @@
+import { useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -6,9 +7,10 @@ import SearchBar from '../components/SearchBar.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function DonationHistoryScreen({ navigation, route }) {
-  const { role } = useAuth();
+  const styles = useThemedStyles(baseStyles);
+  const { role, donorId: signedInDonorId } = useAuth();
   const isAdmin = role === 'admin';
-  const donorId = route.params?.donorId;
+  const donorId = isAdmin ? route.params?.donorId : signedInDonorId;
   const [donations, setDonations] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function DonationHistoryScreen({ navigation, route }) {
         <View style={styles.emptyCard}><Text style={styles.emptyTitle}>{donations.length === 0 ? 'No donations recorded' : 'No matching donations'}</Text><Text style={styles.empty}>{donations.length === 0 ? 'Add a donation to start the local history.' : 'Try a different search.'}</Text></View>
       ) : visibleDonations.map((item) => (
         <View key={item.id} style={styles.card}>
-          <Pressable onPress={() => navigation.navigate('DonorDetails', { donorId: item.donor_id })} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
+          <Pressable onPress={() => navigation.navigate(isAdmin ? 'DonorDetails' : 'MyProfile', { donorId: item.donor_id })} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
             <View style={styles.badge}><Text style={styles.blood}>{item.blood_group}</Text></View>
             <View style={styles.copy}><Text style={styles.name}>{item.donor_name}</Text><Text style={styles.meta}>{item.donation_date} · {item.location}</Text>{item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}</View>
           </Pressable>
@@ -73,7 +75,7 @@ export default function DonationHistoryScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   page: { padding: 20, paddingBottom: 36 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }, headerCopy: { flex: 1 },
   title: { color: '#173B32', fontSize: 23, fontWeight: '800' }, subtitle: { color: '#65766F', fontSize: 13, marginTop: 4 },
   addButton: { backgroundColor: '#24775D', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 11, marginLeft: 10 }, addText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
@@ -84,4 +86,4 @@ const styles = StyleSheet.create({
   editButton: { borderWidth: 1, borderColor: '#24775D', borderRadius: 9, paddingHorizontal: 14, paddingVertical: 8 }, editText: { color: '#24775D', fontSize: 13, fontWeight: '700' },
   deleteButton: { borderWidth: 1, borderColor: '#E7C5C5', borderRadius: 9, paddingHorizontal: 14, paddingVertical: 8 }, deleteText: { color: '#B33E42', fontSize: 13, fontWeight: '700' },
   state: { marginTop: 50 }, emptyCard: { backgroundColor: '#FFFFFF', borderRadius: 17, padding: 20, alignItems: 'center', marginTop: 18 }, emptyTitle: { color: '#173B32', fontSize: 16, fontWeight: '700', marginBottom: 5 }, empty: { color: '#65766F', fontSize: 14, textAlign: 'center', lineHeight: 20, marginTop: 24 },
-});
+};
