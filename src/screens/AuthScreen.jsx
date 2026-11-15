@@ -1,14 +1,19 @@
 import { useTheme, useThemedStyles } from "../theme/ThemeContext.jsx";
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-export default function AuthScreen({ configured, onSetupAdmin, onAdminSignIn, onDonorSignIn, onOpenSignup, initialScreen = 'home' }) {
+export default function AuthScreen({ configured, onSetupAdmin, onAdminSignIn, onDonorSignIn, onResetDonorPassword, onOpenSignup, initialScreen = 'home' }) {
   const { mode } = useTheme();
   const styles = useThemedStyles(baseStyles);
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [screen, setScreen] = useState(initialScreen);
   const [confirmation, setConfirmation] = useState('');
+  const [recoveryPhone, setRecoveryPhone] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
+  const [resetComplete, setResetComplete] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -33,6 +38,31 @@ export default function AuthScreen({ configured, onSetupAdmin, onAdminSignIn, on
     }
   }
 
+  async function submitPasswordReset() {
+    setError('');
+    if (!recoveryPhone.trim()) return setError('Enter the mobile number used during registration.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail.trim())) return setError('Enter a valid email address.');
+    if (newPassword.length < 8) return setError('Use a new password with at least 8 characters.');
+    if (newPassword !== newPasswordConfirmation) return setError('The new passwords do not match.');
+    setBusy(true);
+    try {
+      const reset = await onResetDonorPassword(recoveryPhone, recoveryEmail, newPassword);
+      if (!reset) return setError('Those details do not match a donor account on this device. Check them or contact the administrator.');
+      setScreen('donor');
+      setResetComplete(true);
+      setPassword('');
+      setUsername('');
+      setRecoveryPhone('');
+      setRecoveryEmail('');
+      setNewPassword('');
+      setNewPasswordConfirmation('');
+    } catch (resetError) {
+      setError(resetError?.message || 'Could not reset the password. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
@@ -43,11 +73,28 @@ export default function AuthScreen({ configured, onSetupAdmin, onAdminSignIn, on
           <Text style={styles.body}>Choose how you want to sign in.</Text>
           <Pressable onPress={() => { setScreen('admin'); setError(''); }} style={styles.primary}><Text style={styles.primaryText}>Admin Login</Text></Pressable>
           <Pressable onPress={() => { setScreen('donor'); setError(''); }} style={styles.secondary}><Text style={styles.secondaryText}>Donor Login</Text></Pressable>
+        </> : screen === 'forgot' ? <>
+          <Pressable onPress={() => { setScreen('donor'); setError(''); }} style={styles.back}><Text style={styles.backText}>â€¹ Back to Donor Login</Text></Pressable>
+          <Text style={styles.title}>Reset Donor Password</Text>
+          <Text style={styles.body}>Enter the mobile number and email saved during donor registration. LifeLink checks these details on this device; no OTP or internet service is used.</Text>
+          <Text style={styles.label}>Registered mobile number</Text>
+          <TextInput value={recoveryPhone} onChangeText={setRecoveryPhone} autoCapitalize="none" autoCorrect={false} keyboardType="phone-pad" style={styles.input} placeholder="Enter your registered mobile number" placeholderTextColor="#8A9A93" />
+          <Text style={styles.label}>Registered email</Text>
+          <TextInput value={recoveryEmail} onChangeText={setRecoveryEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" style={styles.input} placeholder="Enter your registered email" placeholderTextColor="#8A9A93" />
+          <Text style={styles.label}>New password</Text>
+          <TextInput value={newPassword} onChangeText={setNewPassword} secureTextEntry autoCapitalize="none" autoCorrect={false} style={styles.input} placeholder="At least 8 characters" placeholderTextColor="#8A9A93" />
+          <Text style={styles.label}>Confirm new password</Text>
+          <TextInput value={newPasswordConfirmation} onChangeText={setNewPasswordConfirmation} secureTextEntry autoCapitalize="none" autoCorrect={false} style={styles.input} placeholder="Re-enter your new password" placeholderTextColor="#8A9A93" />
+          {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
+          <Pressable disabled={busy} onPress={submitPasswordReset} style={[styles.primary, busy && styles.disabled]}>
+            {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>Reset Password</Text>}
+          </Pressable>
         </> : <>
           <Pressable onPress={() => { setScreen('home'); setError(''); setPassword(''); setUsername(''); }} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
           <Text style={styles.title}>{screen === 'admin' ? configured ? 'Admin Login' : 'Set Up Administrator' : 'Donor Login'}</Text>
           <Text style={styles.body}>{screen === 'admin' ? configured ? 'Enter the administrator password for this device.' : 'Create the administrator password for this device.' : 'Login to access your registered donor profile.'}</Text>
           {screen === 'donor' ? <>
+            {resetComplete ? <Text accessibilityRole="status" style={styles.success}>Password reset. Log in with your new password.</Text> : null}
             <Text style={styles.label}>Username</Text>
             <TextInput value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} style={styles.input} placeholder="Enter your username." placeholderTextColor="#8A9A93" />
           </> : null}
@@ -63,7 +110,7 @@ export default function AuthScreen({ configured, onSetupAdmin, onAdminSignIn, on
           </Pressable>
           {screen === 'donor' ? <>
             <Pressable onPress={onOpenSignup} style={styles.secondary}><Text style={styles.secondaryText}>Donor Registration</Text></Pressable>
-            <Pressable onPress={() => Alert.alert('Forgot Password', 'LifeLink is offline and cannot send a reset code. Contact the administrator to verify your identity and set a new password in Donor Registry > your profile > Edit Donor > Donor sign-in.')} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password</Text></Pressable>
+            <Pressable onPress={() => { setScreen('forgot'); setError(''); setResetComplete(false); }} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password</Text></Pressable>
           </> : null}
         </>}
         <Text style={styles.securityNote}>This is an on-device access gate. The local SQLite database is not encrypted, and accounts do not sync to other devices.</Text>
@@ -79,7 +126,7 @@ const baseStyles = {
   eyebrow: { color: '#24775D', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 12 }, title: { color: '#173B32', fontSize: 25, fontWeight: '800' },
   body: { color: '#65766F', fontSize: 14, lineHeight: 21, marginTop: 8, marginBottom: 22 }, label: { color: '#173B32', fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
   input: { backgroundColor: '#F5F8F6', borderWidth: 1, borderColor: '#DCE6E0', borderRadius: 12, color: '#173B32', paddingHorizontal: 14, paddingVertical: 13, fontSize: 15 },
-  error: { color: '#B33E42', fontSize: 13, marginTop: 10 }, primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: '#24775D', borderRadius: 13, padding: 14, marginTop: 18 },
+  error: { color: '#B33E42', fontSize: 13, marginTop: 10 }, success: { color: '#24775D', backgroundColor: '#E6F3ED', borderRadius: 10, padding: 11, fontSize: 13, marginBottom: 6 }, primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: '#24775D', borderRadius: 13, padding: 14, marginTop: 18 },
   primaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 }, secondary: { alignItems: 'center', borderWidth: 1, borderColor: '#24775D', borderRadius: 13, padding: 13, marginTop: 10 },
   back: { alignSelf: 'flex-start', marginBottom: 14, paddingVertical: 4 }, backText: { color: '#24775D', fontSize: 14, fontWeight: '700' },
   forgot: { alignSelf: 'center', paddingVertical: 12 }, forgotText: { color: '#24775D', fontSize: 13, fontWeight: '700' },
