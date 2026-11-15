@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StatusBar, Text, View } from 'react-native';
 import AppNavigation from './src/navigation/AppNavigation.jsx';
 import { getDatabase } from './src/database/database';
-import { createAdminCredential, createDonorSignup, getAdminCredential, validateDonorSignupEligibility, verifyAdminCredential, verifyDonorCredential } from './src/database/authTable';
+import { createAdminCredential, createDonorSignup, getAdminCredential, resetDonorPasswordOffline, validateDonorSignupEligibility, verifyAdminCredential, verifyDonorCredential } from './src/database/authTable';
 import AuthScreen from './src/screens/AuthScreen.jsx';
 import DonorSignupScreen from './src/screens/DonorSignupScreen.jsx';
 import { AuthProvider } from './src/auth/AuthContext.jsx';
@@ -67,7 +67,7 @@ function AppContent() {
       <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       {auth.loading ? <View style={styles.state}><Text style={styles.stateText}>Loading LifeLink…</Text></View> : auth.error ? (
         <View style={styles.state}><Text style={styles.stateText}>LifeLink could not open its local database.</Text><Pressable onPress={() => { setAuth((current) => ({ ...current, loading: true, error: false })); setRetryCount((current) => current + 1); }}><Text style={styles.retry}>Try again</Text></Pressable></View>
-      ) : auth.role ? <AppNavigation /> : showDonorSignup ? <DonorSignupScreen onBack={() => { setShowDonorSignup(false); setReturnToDonorLogin(true); }} onSubmit={createDonorSignup} onValidateEligibility={validateDonorSignupEligibility} /> : <AuthScreen configured={auth.configured} onSetupAdmin={setupAdmin} onAdminSignIn={signInAdmin} onDonorSignIn={signInDonor} onOpenSignup={() => setShowDonorSignup(true)} initialScreen={returnToDonorLogin ? 'donor' : 'home'} />}
+      ) : auth.role ? <AppNavigation /> : showDonorSignup ? <DonorSignupScreen onBack={() => { setShowDonorSignup(false); setReturnToDonorLogin(true); }} onSubmit={createDonorSignup} onValidateEligibility={validateDonorSignupEligibility} /> : <AuthScreen configured={auth.configured} onSetupAdmin={setupAdmin} onAdminSignIn={signInAdmin} onDonorSignIn={signInDonor} onResetDonorPassword={resetDonorPasswordOffline} onOpenSignup={() => setShowDonorSignup(true)} initialScreen={returnToDonorLogin ? 'donor' : 'home'} />}
     </AuthProvider>
   );
 }

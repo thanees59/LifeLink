@@ -106,6 +106,28 @@ export async function verifyDonorCredential(username, password) {
   return difference === 0 ? credential.donor_id : null;
 }
 
+/** Resets a donor password locally after matching both registered recovery fields. */
+export async function resetDonorPasswordOffline(phone, email, newPassword) {
+  const cleanEmail = String(email ?? '').trim().toLocaleLowerCase();
+  const cleanPhone = normalizePhoneDigits(phone);
+  if (!cleanPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || String(newPassword ?? '').length < 8) {
+    throw new Error('Enter the registered mobile number, a valid email, and a password with at least 8 characters.');
+  }
+
+  const db = await getDatabase();
+  const matches = await db.getAllAsync('SELECT donor_id, phone FROM app_donor_auth WHERE email = ? COLLATE NOCASE', cleanEmail);
+  const matchingAccounts = matches.filter((account) => normalizePhoneDigits(account.phone) === cleanPhone);
+  if (matchingAccounts.length === 0) return false;
+  if (matchingAccounts.length > 1) throw new Error('These details match more than one donor account. Contact the administrator for help.');
+
+  const salt = bytesToHex(await Crypto.getRandomBytesAsync(16));
+  const passwordHash = await hashPassword(salt, String(newPassword));
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE app_donor_auth SET salt = ?, password_hash = ? WHERE donor_id = ?', salt, passwordHash, matchingAccounts[0].donor_id);
+  });
+  return true;
+}
+
 export async function createDonorSignup(values) {
   const name = String(values.name ?? '').trim();
   const username = String(values.username ?? '').trim();
